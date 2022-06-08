@@ -46,23 +46,23 @@ _PREDEFINED_SPLITS_COCO["coco"] = {
         "coco/annotations/instances_valminusminival2014.json",
     ),
     "coco_2017_train": (
-        "coco/train2017",
+        "coco/images/train2017",
         "coco/annotations/instances_train2017.json",
     ),
     "coco_2017_val": (
-        "coco/val2017",
+        "coco/images/val2017",
         "coco/annotations/instances_val2017.json",
     ),
     "coco_2017_test": (
-        "coco/test2017",
+        "coco/images/test2017",
         "coco/annotations/image_info_test2017.json",
     ),
     "coco_2017_test-dev": (
-        "coco/test2017",
+        "coco/images/test2017",
         "coco/annotations/image_info_test-dev2017.json",
     ),
     "coco_2017_val_100": (
-        "coco/val2017",
+        "coco/images/val2017",
         "coco/annotations/instances_val2017_100.json",
     ),
 }

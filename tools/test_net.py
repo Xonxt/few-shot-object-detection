@@ -41,6 +41,22 @@ class Trainer(DefaultTrainer):
     are working on a new research project. In that case you can use the cleaner
     "SimpleTrainer", or write your own training loop.
     """
+    
+    custom_evaluator = None
+
+    def __init__(self, cfg, custom_evaluator=None):
+        super().__init__(cfg)
+        self.custom_evaluator = custom_evaluator
+        
+    @classmethod
+    def set_evaluator(cls, evaluator):
+        cls.custom_evaluator = evaluator
+
+    @classmethod
+    def test(cls, cfg, model, evaluators=None, custom_evaluator=None):
+        # cls.custom_evaluator = custom_evaluator or cls.custom_evaluator
+        
+        return super().test(cfg, model, evaluators)
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -52,6 +68,10 @@ class Trainer(DefaultTrainer):
         """
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
+
+        if cls.custom_evaluator is not None:
+            return cls.custom_evaluator(dataset_name)
+
         evaluator_list = []
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         if evaluator_type == "coco":
@@ -74,12 +94,14 @@ class Trainer(DefaultTrainer):
 
 
 class Tester:
-    def __init__(self, cfg):
+    def __init__(self, cfg, custom_evaluator=None):
         self.cfg = cfg
         self.model = Trainer.build_model(cfg)
         self.check_pointer = DetectionCheckpointer(
             self.model, save_dir=cfg.OUTPUT_DIR
         )
+
+        self.custom_evaluator = custom_evaluator
 
         self.best_res = None
         self.best_file = None
@@ -88,7 +110,7 @@ class Tester:
     def test(self, ckpt):
         self.check_pointer._load_model(self.check_pointer._load_file(ckpt))
         print("evaluating checkpoint {}".format(ckpt))
-        res = Trainer.test(self.cfg, self.model)
+        res = Trainer.test(self.cfg, self.model, custom_evaluator=self.custom_evaluator)
 
         if comm.is_main_process():
             verify_results(self.cfg, res)

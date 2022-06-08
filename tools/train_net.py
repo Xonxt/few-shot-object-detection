@@ -15,6 +15,7 @@ You may want to write your own script with your datasets and other customization
 """
 
 import os
+from subprocess import call
 
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
@@ -39,6 +40,21 @@ class Trainer(DefaultTrainer):
     are working on a new research project. In that case you can use the cleaner
     "SimpleTrainer", or write your own training loop.
     """
+    
+    custom_evaluator = None
+
+    def __init__(self, cfg, custom_evaluator=None):
+        super().__init__(cfg)
+        self.custom_evaluator = custom_evaluator
+        
+    @classmethod
+    def set_evaluator(cls, evaluator):
+        cls.custom_evaluator = evaluator
+        
+    @classmethod
+    def test(cls, cfg, model, evaluators=None, custom_evaluator=None):
+        cls.custom_evaluator = custom_evaluator or cls.custom_evaluator
+        return super().test(cfg, model, evaluators)
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -50,8 +66,13 @@ class Trainer(DefaultTrainer):
         """
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
+
+        if cls.custom_evaluator is not None:
+            return cls.custom_evaluator(dataset_name)
+
         evaluator_list = []
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
+
         if evaluator_type == "coco":
             evaluator_list.append(
                 COCOEvaluator(dataset_name, cfg, True, output_folder)
@@ -60,6 +81,7 @@ class Trainer(DefaultTrainer):
             return PascalVOCDetectionEvaluator(dataset_name)
         if evaluator_type == "lvis":
             return LVISEvaluator(dataset_name, cfg, True, output_folder)
+
         if len(evaluator_list) == 0:
             raise NotImplementedError(
                 "no Evaluator for the dataset {} with the type {}".format(

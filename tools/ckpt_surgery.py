@@ -92,7 +92,7 @@ def ckpt_surgery(args):
             new_weight[-1] = pretrained_weight[-1]  # bg class
         ckpt["model"][weight_name] = new_weight
 
-    surgery_loop(args, surgery)
+    return surgery_loop(args, surgery)
 
 
 def combine_ckpts(args):
@@ -145,7 +145,7 @@ def combine_ckpts(args):
                 new_weight[prev_cls:] = ckpt2_weight
         ckpt["model"][weight_name] = new_weight
 
-    surgery_loop(args, surgery)
+    return surgery_loop(args, surgery)
 
 
 def surgery_loop(args, surgery):
@@ -178,10 +178,12 @@ def surgery_loop(args, surgery):
             if param_name + ".bias" in ckpt["model"]:
                 del ckpt["model"][param_name + ".bias"]
         save_ckpt(ckpt, save_path)
-        return
+        return save_path
 
     # Surgery
-    tar_sizes = [TAR_SIZE + 1, TAR_SIZE * 4]
+    tsize = TAR_SIZE if 'TAR_SIZE' in globals() or 'TAR_SIZE' in locals() else getattr(args, "tar_size", 20)
+
+    tar_sizes = [tsize + 1, tsize * 4]
     for idx, (param_name, tar_size) in enumerate(
         zip(args.param_name, tar_sizes)
     ):
@@ -190,6 +192,7 @@ def surgery_loop(args, surgery):
 
     # Save to file
     save_ckpt(ckpt, save_path)
+    return save_path
 
 
 def save_ckpt(ckpt, save_name):

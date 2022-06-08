@@ -19,6 +19,7 @@ logger-files/
 
 exp/
 checkpoints/
+models/
 
 # datasets
 datasets/coco
